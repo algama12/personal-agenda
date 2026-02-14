@@ -41,7 +41,7 @@
                             <!-- View Switcher -->
                             <div class="flex bg-gray-100 rounded-lg p-1">
                                 <button @click="changeView('day')" :class="currentView === 'day' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'" class="px-4 py-2 text-sm font-medium rounded-md transition-all">
-                                    Dia
+                                    Día
                                 </button>
                                 <button @click="changeView('week')" :class="currentView === 'week' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'" class="px-4 py-2 text-sm font-medium rounded-md transition-all">
                                     Semana
@@ -50,7 +50,7 @@
                                     Mes
                                 </button>
                                 <button @click="changeView('year')" :class="currentView === 'year' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'" class="px-4 py-2 text-sm font-medium rounded-md transition-all">
-                                    Ano
+                                    Año
                                 </button>
                             </div>
                         </div>
@@ -80,9 +80,37 @@
                     </div>
                 </div>
 
-                <!-- Notes Sidebar -->
-                <div class="w-full lg:w-80">
-                    @include('calendar.partials.notes-panel')
+                <!-- Sidebar -->
+                <div class="w-full lg:w-80 space-y-4">
+                    <!-- Sidebar Tabs -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-1 flex">
+                        <button @click="sidebarTab = 'notes'"
+                                :class="sidebarTab === 'notes' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'"
+                                class="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Notas
+                        </button>
+                        <button @click="sidebarTab = 'shopping'"
+                                :class="sidebarTab === 'shopping' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'"
+                                class="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/>
+                            </svg>
+                            Compra
+                        </button>
+                    </div>
+
+                    <!-- Notes Panel -->
+                    <div x-show="sidebarTab === 'notes'">
+                        @include('calendar.partials.notes-panel')
+                    </div>
+
+                    <!-- Shopping List Panel -->
+                    <div x-show="sidebarTab === 'shopping'">
+                        @include('calendar.partials.shopping-panel')
+                    </div>
                 </div>
             </div>
         </div>
@@ -221,6 +249,10 @@
                     content: '',
                     pinned: false
                 },
+                shoppingItems: [],
+                newShoppingItem: '',
+                sidebarTab: 'notes',
+
                 colors: ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'],
 
                 // Toast system
@@ -252,7 +284,7 @@
                     { text: "No esperes. El tiempo nunca sera el adecuado.", author: "Napoleon Hill" },
                     { text: "Tu tiempo es limitado, no lo desperdicies viviendo la vida de alguien mas.", author: "Steve Jobs" },
                     { text: "El secreto de salir adelante es empezar.", author: "Mark Twain" },
-                    { text: "Cada dia es una nueva oportunidad para cambiar tu vida.", author: "Anonimo" },
+                    { text: "Cada dia es una nueva oportunidad para cambiar tu vida.", author: "Anónimo" },
                     { text: "La persistencia puede cambiar el fracaso en un logro extraordinario.", author: "Marv Levy" },
                     { text: "Lo que haces hoy puede mejorar todos tus mananas.", author: "Ralph Marston" },
                     { text: "La unica forma de lograr lo imposible es creer que es posible.", author: "Charles Kingsleigh" },
@@ -302,7 +334,7 @@
                     const lastDay = new Date(year, month + 1, 0);
                     const days = [];
 
-                    const startDay = firstDay.getDay();
+                    const startDay = (firstDay.getDay() + 6) % 7; // Monday = 0
                     const prevMonthLastDay = new Date(year, month, 0).getDate();
                     for (let i = startDay - 1; i >= 0; i--) {
                         days.push({
@@ -355,13 +387,15 @@
                 getWeekStart(date) {
                     const d = new Date(date);
                     const day = d.getDay();
-                    d.setDate(d.getDate() - day);
+                    const diff = (day === 0) ? -6 : 1 - day;
+                    d.setDate(d.getDate() + diff);
                     return d;
                 },
 
                 init() {
                     this.fetchEvents();
                     this.fetchNotes();
+                    this.fetchShoppingItems();
                     this.loadDailyQuote();
                 },
 
@@ -539,7 +573,10 @@
                 },
 
                 formatDate(date) {
-                    return date.toISOString().split('T')[0];
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
                 },
 
                 formatTime(isoString) {
@@ -745,6 +782,101 @@
                     }
                 },
 
+                // Shopping list methods
+                async fetchShoppingItems() {
+                    const response = await fetch('/shopping-items');
+                    this.shoppingItems = await response.json();
+                },
+
+                async addShoppingItem() {
+                    if (!this.newShoppingItem.trim()) return;
+
+                    try {
+                        const response = await fetch('/shopping-items', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ name: this.newShoppingItem.trim() })
+                        });
+
+                        if (response.ok) {
+                            this.newShoppingItem = '';
+                            this.fetchShoppingItems();
+                        } else {
+                            this.showToast('Error al añadir el artículo', 'error');
+                        }
+                    } catch (error) {
+                        this.showToast('Error de conexión', 'error');
+                    }
+                },
+
+                async toggleShoppingItem(item) {
+                    try {
+                        const response = await fetch(`/shopping-items/${item.id}/toggle`, {
+                            method: 'PATCH',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+
+                        if (response.ok) {
+                            this.fetchShoppingItems();
+                        }
+                    } catch (error) {
+                        this.showToast('Error de conexión', 'error');
+                    }
+                },
+
+                async deleteShoppingItem(item) {
+                    try {
+                        const response = await fetch(`/shopping-items/${item.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+
+                        if (response.ok) {
+                            this.fetchShoppingItems();
+                        }
+                    } catch (error) {
+                        this.showToast('Error de conexión', 'error');
+                    }
+                },
+
+                async clearCompletedItems() {
+                    const completedCount = this.shoppingItems.filter(i => i.completed).length;
+                    if (completedCount === 0) return;
+
+                    const confirmed = await this.showConfirm({
+                        type: 'warning',
+                        title: 'Limpiar completados',
+                        message: `Vas a eliminar ${completedCount} artículo(s) completado(s).`,
+                        confirmText: 'Limpiar'
+                    });
+
+                    if (confirmed) {
+                        try {
+                            const response = await fetch('/shopping-items-clear', {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                }
+                            });
+
+                            if (response.ok) {
+                                this.fetchShoppingItems();
+                                this.showToast('Artículos completados eliminados', 'success');
+                            }
+                        } catch (error) {
+                            this.showToast('Error de conexión', 'error');
+                        }
+                    }
+                },
+
                 getMonthName(month) {
                     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
                     return months[month];
@@ -762,7 +894,7 @@
                     const lastDay = new Date(year, month + 1, 0);
                     const days = [];
 
-                    const startDay = firstDay.getDay();
+                    const startDay = (firstDay.getDay() + 6) % 7; // Monday = 0
                     for (let i = 0; i < startDay; i++) {
                         days.push(null);
                     }

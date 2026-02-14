@@ -11,7 +11,7 @@
                 <!-- Mini calendar grid -->
                 <div class="grid grid-cols-7 gap-0.5 text-center text-xs">
                     <!-- Day headers -->
-                    <template x-for="dayName in ['D', 'L', 'M', 'X', 'J', 'V', 'S']" :key="dayName">
+                    <template x-for="dayName in ['L', 'M', 'X', 'J', 'V', 'S', 'D']" :key="dayName">
                         <div class="text-gray-400 font-medium" x-text="dayName"></div>
                     </template>
 
