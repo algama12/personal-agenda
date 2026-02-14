@@ -34,6 +34,11 @@ class User extends Authenticatable
         return $this->hasMany(Note::class);
     }
 
+    public function shoppingItems()
+    {
+        return $this->hasMany(ShoppingItem::class);
+    }
+
     public function getInitialsAttribute(): string
     {
         $words = explode(' ', $this->name);

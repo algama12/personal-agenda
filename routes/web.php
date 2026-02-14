@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\ShoppingItemController;
 use Illuminate\Support\Facades\Route;
 use Carbon\Carbon;
 
@@ -28,6 +29,12 @@ Route::middleware(['auth', 'restrict.users'])->group(function () {
     Route::apiResource('events', EventController::class);
     Route::apiResource('notes', NoteController::class);
     Route::patch('/notes/{note}/toggle-pin', [NoteController::class, 'togglePin'])->name('notes.toggle-pin');
+
+    Route::get('/shopping-items', [ShoppingItemController::class, 'index'])->name('shopping-items.index');
+    Route::post('/shopping-items', [ShoppingItemController::class, 'store'])->name('shopping-items.store');
+    Route::delete('/shopping-items/{shoppingItem}', [ShoppingItemController::class, 'destroy'])->name('shopping-items.destroy');
+    Route::patch('/shopping-items/{shoppingItem}/toggle', [ShoppingItemController::class, 'toggleComplete'])->name('shopping-items.toggle');
+    Route::delete('/shopping-items-clear', [ShoppingItemController::class, 'clearCompleted'])->name('shopping-items.clear-completed');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

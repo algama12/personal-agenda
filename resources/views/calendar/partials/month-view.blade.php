@@ -1,7 +1,7 @@
 <div>
     <!-- Days of week header -->
     <div class="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
-        <template x-for="(dayName, index) in ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab']" :key="index">
+        <template x-for="(dayName, index) in ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']" :key="index">
             <div class="py-2 text-center text-sm font-medium text-gray-700" x-text="dayName"></div>
         </template>
     </div>
